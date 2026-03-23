@@ -6,6 +6,7 @@ import {
   Gitlab,
   Settings,
   History,
+  Map,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -24,6 +25,7 @@ export type SourceView =
   | { source: "github"; owner: string; repo: string; repoName: string }
   | { source: "gitlab"; projectId: number; projectName: string }
   | { source: "history" }
+  | { source: "roadmap" }
   | { source: "settings" }
   | null;
 
@@ -212,6 +214,16 @@ export function Sidebar({
         >
           <History size={18} className="shrink-0" />
           {!collapsed && <span>History</span>}
+        </button>
+
+        {/* Roadmap */}
+        <button
+          onClick={() => onSelectView({ source: "roadmap" })}
+          className={`sidebar-link ${collapsed ? "justify-center" : "w-full"} ${activeView !== null && "source" in activeView && activeView.source === "roadmap" ? "is-active" : ""}`}
+          title="Roadmap"
+        >
+          <Map size={18} className="shrink-0" />
+          {!collapsed && <span>Roadmap</span>}
         </button>
 
         {/* Settings */}

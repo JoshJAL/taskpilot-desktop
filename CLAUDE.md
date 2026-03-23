@@ -183,6 +183,64 @@ Not every change touches all four — use judgement based on what's affected.
 
 ---
 
+## Auto-Update (Phase 22k) — Implementation Plan
+
+### Overview
+
+Use `electron-updater` (already installed) to check GitHub Releases for new versions, download updates in the background, and prompt the user to restart. AppImage is the only Linux target that supports auto-update; `.deb` users get an in-app banner with a download link.
+
+### Platform Support
+
+| Platform | Format | Auto-update? | Mechanism |
+|----------|--------|--------------|-----------|
+| Windows | NSIS `.exe` | Yes | Downloads + installs on quit |
+| macOS | DMG | Yes | Downloads + installs on quit (code signing recommended) |
+| Linux | AppImage | Yes | Replaces AppImage file in-place |
+| Linux | deb | No | In-app banner with download link to GitHub Release |
+
+### Implementation Steps
+
+1. **`src/main/updater.ts`** — Auto-updater module
+   - Import `autoUpdater` from `electron-updater`
+   - Configure logging via `electron-log`
+   - Check for updates on app launch and on a periodic interval (every 4 hours)
+   - Emit IPC events to renderer for update state: `checking`, `available`, `not-available`, `downloaded`, `error`
+   - On `update-downloaded`, notify renderer so it can show a restart prompt
+   - Expose `quitAndInstall()` via IPC so renderer can trigger restart
+
+2. **`src/main/index.ts`** — Wire up updater
+   - Call `initAutoUpdater(mainWindow)` after window creation
+   - Skip in dev mode (`!app.isPackaged`)
+
+3. **`src/preload/index.ts`** — IPC bridge additions
+   - `onUpdateEvent(callback)` — listen for update state changes from main
+   - `installUpdate()` — trigger quit-and-install
+   - `checkForUpdates()` — manual check from settings page
+   - `getUpdateStatus()` — get current update state
+
+4. **`src/renderer/components/UpdateNotification.tsx`** — UI component
+   - Subtle banner/toast when an update is downloaded
+   - "Restart Now" and "Later" buttons
+   - For `.deb` users: "Download Latest" link to GitHub Releases page
+
+5. **CI publish step** — Update GitHub Actions
+   - Add `--publish always` (or `onTag`) to `electron-builder` in CI
+   - Ensures `latest.yml` / `latest-linux.yml` / `latest-mac.yml` are uploaded to the GitHub Release
+
+6. **Dependencies**
+   - Add `electron-log` for persistent update logging
+
+### IPC Additions
+
+| Method | Direction | Purpose |
+|--------|-----------|---------|
+| `onUpdateEvent(callback)` | Main → Renderer | Stream update lifecycle events |
+| `installUpdate()` | Renderer → Main | Trigger quit-and-install |
+| `checkForUpdates()` | Renderer → Main | Manual update check |
+| `getUpdateStatus()` | Renderer → Main | Get current update state |
+
+---
+
 ## Code Style
 
 - **TypeScript strict mode**. No `any`. Use `unknown` + type guards.

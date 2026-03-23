@@ -73,6 +73,16 @@ const api = {
   getSettings: () => ipcRenderer.invoke("settings:get"),
   updateSettings: (settings: Record<string, unknown>) =>
     ipcRenderer.invoke("settings:update", settings),
+
+  // Auto-Update
+  checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  getUpdateStatus: () => ipcRenderer.invoke("update:status"),
+  onUpdateEvent: (callback: (event: unknown) => void) => {
+    const handler = (_e: unknown, event: unknown) => callback(event);
+    ipcRenderer.on("update:event", handler);
+    return () => ipcRenderer.removeListener("update:event", handler);
+  },
 };
 
 contextBridge.exposeInMainWorld("taskpilot", api);

@@ -5,6 +5,7 @@ import { SessionLog } from "./SessionLog";
 import { SessionControls } from "./SessionControls";
 import { SettingsPage } from "./SettingsPage";
 import { HistoryPage } from "./HistoryPage";
+import { RoadmapPage } from "./RoadmapPage";
 import { useSession } from "../hooks/useSession";
 import { useBoardData } from "../hooks/useBoardData";
 import { useToast } from "./Toast";
@@ -170,7 +171,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
     });
   }
 
-  const canStart = !!activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history";
+  const canStart = !!activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap";
 
   return (
     <div className="flex h-screen bg-(--sand)">
@@ -198,6 +199,13 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
           </div>
         )}
 
+        {/* Roadmap page */}
+        {activeView && "source" in activeView && activeView.source === "roadmap" && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <RoadmapPage />
+          </div>
+        )}
+
         {/* No selection */}
         {!activeView && (
           <div className="flex flex-1 items-center justify-center">
@@ -213,7 +221,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
         )}
 
         {/* Active source view */}
-        {activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && (
+        {activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap" && (
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Header */}
             <div className="border-b border-(--shore-line) bg-(--sand) px-6 py-3">

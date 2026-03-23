@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { LoginPage } from "./components/LoginPage";
 import { Dashboard } from "./components/Dashboard";
+import { UpdateNotification } from "./components/UpdateNotification";
 
 declare global {
   interface Window {
@@ -31,5 +32,10 @@ export default function App() {
     return <LoginPage onLogin={(s) => setSession(s)} />;
   }
 
-  return <Dashboard session={session} onLogout={() => setSession(null)} />;
+  return (
+    <>
+      <Dashboard session={session} onLogout={() => setSession(null)} />
+      <UpdateNotification />
+    </>
+  );
 }

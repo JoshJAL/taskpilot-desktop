@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, shell, nativeImage } from "electron";
 import { join } from "path";
 import { registerIpcHandlers } from "./ipc";
+import { initAutoUpdater } from "./updater";
 
 // Fix GPU crashes on Linux (Wayland/EGL issues)
 app.disableHardwareAcceleration();
@@ -61,6 +62,11 @@ function createWindow() {
 app.whenReady().then(() => {
   registerIpcHandlers();
   createWindow();
+
+  // Auto-updater (only in packaged builds)
+  if (app.isPackaged && mainWindow) {
+    initAutoUpdater(mainWindow);
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
