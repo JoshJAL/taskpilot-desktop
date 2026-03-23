@@ -20,6 +20,8 @@ export async function apiFetch<T>(
   const res = await fetch(`${serverUrl}${path}`, {
     ...options,
     headers: {
+      Origin: serverUrl,
+      Referer: serverUrl,
       ...(cookie ? { Cookie: cookie } : {}),
       ...((options?.headers as Record<string, string>) ?? {}),
     },

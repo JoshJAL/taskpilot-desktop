@@ -9,7 +9,11 @@ export function registerIpcHandlers() {
     const serverUrl = getServerUrl();
     const res = await fetch(`${serverUrl}/api/auth/sign-in/email`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Origin": serverUrl,
+        "Referer": serverUrl,
+      },
       body: JSON.stringify({ email, password }),
     });
 

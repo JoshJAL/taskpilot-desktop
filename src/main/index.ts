@@ -2,6 +2,9 @@ import { app, BrowserWindow, shell } from "electron";
 import { join } from "path";
 import { registerIpcHandlers } from "./ipc";
 
+// Fix GPU crashes on Linux (Wayland/EGL issues)
+app.disableHardwareAcceleration();
+
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {

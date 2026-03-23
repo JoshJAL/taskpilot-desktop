@@ -1,49 +1,194 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
+@source "../../renderer/**/*.{tsx,ts}";
 
-:root {
-  --sand: #faf9f6;
-  --foam: #f0eeeb;
-  --shore-line: #d4d0ca;
-  --sea-ink: #1a1a1a;
-  --sea-ink-soft: #6b6b6b;
-  --lagoon: #2563eb;
-  --kicker: #6b7280;
-  --line: #e5e5e5;
-  --surface: #f5f5f5;
-  --header-bg: rgba(250, 249, 246, 0.85);
-  --code-bg: #1e1e1e;
-  --code-text: #d4d4d4;
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  --color-blue-slate-50: #eff4f5;
+  --color-blue-slate-100: #e0eaeb;
+  --color-blue-slate-200: #c1d4d7;
+  --color-blue-slate-300: #a2bfc3;
+  --color-blue-slate-400: #83a9af;
+  --color-blue-slate-500: #63949c;
+  --color-blue-slate-600: #50767c;
+  --color-blue-slate-700: #3c595d;
+  --color-blue-slate-800: #283b3e;
+  --color-blue-slate-900: #141e1f;
+  --color-blue-slate-950: #0e1516;
 }
 
-.dark {
-  --sand: #111111;
-  --foam: #1a1a1a;
-  --shore-line: #333333;
-  --sea-ink: #e0e0e0;
-  --sea-ink-soft: #999999;
-  --lagoon: #3b82f6;
-  --kicker: #9ca3af;
-  --line: #2a2a2a;
-  --surface: #1e1e1e;
-  --header-bg: rgba(17, 17, 17, 0.85);
-  --code-bg: #0d0d0d;
-  --code-text: #d4d4d4;
+/* ── Light mode ──────────────────────────────────────────────────── */
+:root {
+  --sea-ink: #141e1f;
+  --sea-ink-soft: #3c595d;
+  --lagoon: #50767c;
+  --lagoon-deep: #3c595d;
+  --sand: #eff4f5;
+  --foam: #e0eaeb;
+  --shore-line: #c1d4d7;
+  --surface: rgba(255, 255, 255, 0.74);
+  --surface-strong: rgba(255, 255, 255, 0.9);
+  --line: rgba(20, 30, 31, 0.14);
+  --inset-glint: rgba(255, 255, 255, 0.82);
+  --kicker: #50767c;
+  --bg-base: #eff4f5;
+  --header-bg: rgba(239, 244, 245, 0.86);
+  --chip-bg: rgba(255, 255, 255, 0.8);
+  --chip-line: rgba(80, 118, 124, 0.2);
+  --link-bg-hover: rgba(224, 234, 235, 0.9);
+  --code-bg: #141e1f;
+  --code-text: #e0eaeb;
+}
+
+/* ── Dark mode (explicit) ────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  --sea-ink: #e0eaeb;
+  --sea-ink-soft: #a2bfc3;
+  --lagoon: #83a9af;
+  --lagoon-deep: #a2bfc3;
+  --sand: #0e1516;
+  --foam: #141e1f;
+  --shore-line: #283b3e;
+  --surface: rgba(14, 21, 22, 0.8);
+  --surface-strong: rgba(14, 21, 22, 0.92);
+  --line: rgba(162, 191, 195, 0.16);
+  --inset-glint: rgba(162, 191, 195, 0.1);
+  --kicker: #83a9af;
+  --bg-base: #0e1516;
+  --header-bg: rgba(14, 21, 22, 0.86);
+  --chip-bg: rgba(20, 30, 31, 0.9);
+  --chip-line: rgba(131, 169, 175, 0.2);
+  --link-bg-hover: rgba(40, 59, 62, 0.6);
+  --code-bg: #0a1011;
+  --code-text: #c1d4d7;
+}
+
+/* ── Dark mode (system preference) ───────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sea-ink: #e0eaeb;
+    --sea-ink-soft: #a2bfc3;
+    --lagoon: #83a9af;
+    --lagoon-deep: #a2bfc3;
+    --sand: #0e1516;
+    --foam: #141e1f;
+    --shore-line: #283b3e;
+    --surface: rgba(14, 21, 22, 0.8);
+    --surface-strong: rgba(14, 21, 22, 0.92);
+    --line: rgba(162, 191, 195, 0.16);
+    --inset-glint: rgba(162, 191, 195, 0.1);
+    --kicker: #83a9af;
+    --bg-base: #0e1516;
+    --header-bg: rgba(14, 21, 22, 0.86);
+    --chip-bg: rgba(20, 30, 31, 0.9);
+    --chip-line: rgba(131, 169, 175, 0.2);
+    --link-bg-hover: rgba(40, 59, 62, 0.6);
+    --code-bg: #0a1011;
+    --code-text: #c1d4d7;
+  }
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
   color: var(--sea-ink);
-  background-color: var(--sand);
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.island-shell {
-  background: white;
+/* ── Links ────────────────────────────────────────────────────────── */
+a {
+  color: var(--lagoon-deep);
+  text-decoration-color: rgba(80, 118, 124, 0.4);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--lagoon);
+}
+
+/* ── Code ─────────────────────────────────────────────────────────── */
+code {
+  font-size: 0.9em;
   border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface-strong) 82%, white 18%);
+  border-radius: 7px;
+  padding: 2px 7px;
 }
 
-.dark .island-shell {
-  background: #1e1e1e;
-  border-color: #2a2a2a;
+pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────── */
+.page-wrap {
+  width: min(1080px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+/* ── Cards / surfaces ─────────────────────────────────────────────── */
+.island-shell {
+  border: 1px solid var(--line);
+  background: linear-gradient(165deg, var(--surface-strong), var(--surface));
+  box-shadow:
+    0 1px 0 var(--inset-glint) inset,
+    0 22px 44px rgba(14, 21, 22, 0.07),
+    0 6px 18px rgba(14, 21, 22, 0.05);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Transitions ──────────────────────────────────────────────────── */
+button,
+.island-shell,
+a {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
+    transform 180ms ease;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────── */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sea-ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sidebar-link:hover {
+  background: var(--link-bg-hover);
+  color: var(--sea-ink);
+}
+
+.sidebar-link.is-active {
+  background: var(--link-bg-hover);
+  color: var(--sea-ink);
 }
