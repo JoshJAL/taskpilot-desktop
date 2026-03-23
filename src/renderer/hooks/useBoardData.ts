@@ -1,0 +1,93 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { TrelloBoard, TrelloCard, BoardData } from "../types";
+
+interface CardsResponse {
+  cards: TrelloCard[];
+  doneListId: string | null;
+}
+
+export function useBoards() {
+  return useQuery<TrelloBoard[]>({
+    queryKey: ["trello", "boards"],
+    queryFn: () => window.taskpilot.getBoards(),
+  });
+}
+
+export function useBoardData(boardId: string | null, polling: boolean = false) {
+  return useQuery<CardsResponse>({
+    queryKey: ["trello", "cards", boardId],
+    queryFn: () => window.taskpilot.getBoardData(boardId!),
+    enabled: !!boardId,
+    refetchInterval: polling ? 5000 : false,
+  });
+}
+
+export function useCheckItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      cardId,
+      checkItemId,
+      state,
+    }: {
+      cardId: string;
+      checkItemId: string;
+      state: "complete" | "incomplete";
+      boardId: string;
+    }) => {
+      return window.taskpilot.checkItem(cardId, checkItemId, state);
+    },
+    onMutate: async ({ cardId, checkItemId, state, boardId }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["trello", "cards", boardId],
+      });
+
+      const previous = queryClient.getQueryData<CardsResponse>([
+        "trello",
+        "cards",
+        boardId,
+      ]);
+
+      queryClient.setQueryData<CardsResponse>(
+        ["trello", "cards", boardId],
+        (old) =>
+          old
+            ? {
+                ...old,
+                cards: old.cards.map((card) =>
+                  card.id === cardId
+                    ? {
+                        ...card,
+                        checklists: card.checklists.map((cl) => ({
+                          ...cl,
+                          checkItems: cl.checkItems.map((item) =>
+                            item.id === checkItemId
+                              ? { ...item, state }
+                              : item,
+                          ),
+                        })),
+                      }
+                    : card,
+                ),
+              }
+            : old,
+      );
+
+      return { previous };
+    },
+    onError: (_err, { boardId }, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(
+          ["trello", "cards", boardId],
+          context.previous,
+        );
+      }
+    },
+    onSettled: (_data, _err, { boardId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["trello", "cards", boardId],
+      });
+    },
+  });
+}
