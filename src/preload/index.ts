@@ -4,6 +4,8 @@ const api = {
   // Auth
   login: (email: string, password: string) =>
     ipcRenderer.invoke("auth:login", email, password),
+  register: (name: string, email: string, password: string) =>
+    ipcRenderer.invoke("auth:register", name, email, password),
   logout: () => ipcRenderer.invoke("auth:logout"),
   getSession: () => ipcRenderer.invoke("auth:session"),
 

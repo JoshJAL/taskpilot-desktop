@@ -33,6 +33,32 @@ export function registerIpcHandlers() {
     return res.json();
   });
 
+  ipcMain.handle("auth:register", async (_event, name: string, email: string, password: string) => {
+    const serverUrl = getServerUrl();
+    const res = await fetch(`${serverUrl}/api/auth/sign-up/email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Origin": serverUrl,
+        "Referer": serverUrl,
+      },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { message?: string }).message ?? "Registration failed");
+    }
+
+    // Extract and store the session cookie
+    const setCookie = res.headers.get("set-cookie");
+    if (setCookie) {
+      setSessionCookie(setCookie.split(";")[0]);
+    }
+
+    return res.json();
+  });
+
   ipcMain.handle("auth:logout", async () => {
     setSessionCookie(null);
     return { success: true };

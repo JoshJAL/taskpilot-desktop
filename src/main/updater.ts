@@ -1,6 +1,8 @@
 import { autoUpdater, UpdateInfo } from "electron-updater";
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import { ipcMain } from "electron";
+import { unlink } from "fs/promises";
+import { join, dirname } from "path";
 import log from "electron-log";
 
 export type UpdateStatus =
@@ -60,6 +62,23 @@ export function initAutoUpdater(mainWindow: BrowserWindow): void {
 
   autoUpdater.on("update-downloaded", (info: UpdateInfo) => {
     sendStatus({ state: "downloaded", version: info.version });
+
+    // On Linux AppImage, remove the old version after the new one is downloaded.
+    // The new AppImage is placed alongside the old one; clean up to avoid duplicates.
+    if (process.platform === "linux" && process.env.APPIMAGE) {
+      const oldAppImage = process.env.APPIMAGE;
+      const appDir = dirname(oldAppImage);
+      const newAppImage = join(appDir, `TaskPilot-${info.version}.AppImage`);
+
+      // Only delete if the new file is different from the current one
+      if (oldAppImage !== newAppImage) {
+        autoUpdater.once("before-quit-for-update", () => {
+          unlink(oldAppImage).catch((err: unknown) => {
+            log.warn("Failed to remove old AppImage:", err);
+          });
+        });
+      }
+    }
   });
 
   autoUpdater.on("error", (err: Error) => {
