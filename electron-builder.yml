@@ -1,0 +1,30 @@
+appId: dev.task-pilot.desktop
+productName: TaskPilot
+directories:
+  buildResources: resources
+  output: release
+files:
+  - dist/**/*
+  - package.json
+win:
+  target:
+    - nsis
+  icon: resources/icon.ico
+mac:
+  target:
+    - dmg
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: resources/icon.png
+  category: Development
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+publish:
+  provider: github
+  owner: JoshJAL
+  repo: taskpilot-desktop
