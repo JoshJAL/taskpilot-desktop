@@ -73,11 +73,12 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] API key management (via server API)
 
 ## Phase 22h: Multi-Provider
-**Status: Not started**
+**Status: Complete**
 
-- [ ] OpenAI provider via generic agent loop
-- [ ] Groq provider via generic agent loop
-- [ ] Provider selector in session controls
+- [x] OpenAI provider via generic agent loop
+- [x] Groq provider via generic agent loop
+- [x] Claude provider via generic agent loop
+- [x] Provider selector in session controls
 
 ## Phase 22i: Session History
 **Status: Not started**
