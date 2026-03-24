@@ -26,13 +26,13 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Server URL configuration
 
 ## Phase 22c: Local Mode
-**Status: Not started**
+**Status: Complete**
 
-- [ ] Native directory picker integration
-- [ ] Claude Agent SDK session runner in main process
-- [ ] SSE-like event streaming via IPC (`session:event`)
-- [ ] Session start/stop IPC handlers
-- [ ] MCP server for Trello/GitHub/GitLab task tools
+- [x] Native directory picker integration
+- [x] Generic agent loop session runner in main process (uses direct tool implementations instead of MCP)
+- [x] SSE-like event streaming via IPC (`session:event`)
+- [x] Session start/stop IPC handlers
+- [x] Direct tool implementations for Trello/GitHub/GitLab/filesystem operations
 
 ## Phase 22d: UI Port
 **Status: Not started**
