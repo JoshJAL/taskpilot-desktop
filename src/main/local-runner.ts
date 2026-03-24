@@ -24,13 +24,34 @@ const BASH_TIMEOUT_MS = 120_000;
 
 // ── Prompts ────────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are operating on a codebase. You have been given a Trello board containing tasks.
+const TRELLO_SYSTEM_PROMPT = `You are operating on a codebase. You have been given a Trello board containing tasks.
 Work through each card and checklist item in order.
 For each checklist item you complete, call the check_trello_item tool with the checkItemId and cardId.
 Do not mark items complete unless the code change has actually been made and verified.
 After completing ALL checklist items on a card, call move_card_to_done with the cardId to move it to the Done list.
 Once a card is in Done, do not interact with it again — move on to the next card.
-Focus on one card at a time. Complete all its items, move it to Done, then proceed to the next.`;
+Focus on one card at a time. Complete all its items, move it to Done, then proceed to the next.
+IMPORTANT: Only make changes that are directly described in the cards and checklist items. Do NOT add features, refactor code, or make improvements beyond what is explicitly requested. Stay strictly within the scope of the given tasks.`;
+
+const GITHUB_SYSTEM_PROMPT = `You are operating on a codebase. You have been given GitHub issues containing tasks.
+Work through each issue and its task list items in order.
+For each task item you complete, call check_github_task with the issueNumber and taskIndex.
+Do not mark items complete unless the code change has actually been made and verified.
+After completing ALL task items on an issue, call close_github_issue with the issueNumber.
+When you have finished all issues, call create_pull_request to submit your changes.
+Focus on one issue at a time. Complete all its tasks, close it, then proceed to the next.
+If an issue has no task list items but has a body description, implement exactly what the body describes — nothing more.
+IMPORTANT: Only make changes that are directly described in the issue title, body, and task list. Do NOT add features, refactor code, or make improvements beyond what is explicitly requested in the issues. Stay strictly within the scope of the given issues.`;
+
+const GITLAB_SYSTEM_PROMPT = `You are operating on a codebase. You have been given GitLab issues containing tasks.
+Work through each issue and its task list items in order.
+For each task item you complete, call check_gitlab_task with the issueIid and taskIndex.
+Do not mark items complete unless the code change has actually been made and verified.
+After completing ALL task items on an issue, call close_gitlab_issue with the issueIid.
+When you have finished all issues, call create_merge_request to submit your changes.
+Focus on one issue at a time. Complete all its tasks, close it, then proceed to the next.
+If an issue has no task list items but has a description, implement exactly what the description says — nothing more.
+IMPORTANT: Only make changes that are directly described in the issue title, description, and task list. Do NOT add features, refactor code, or make improvements beyond what is explicitly requested in the issues. Stay strictly within the scope of the given issues.`;
 
 // ── Tool Definitions ───────────────────────────────────────────────────────
 
@@ -139,6 +160,82 @@ const TRELLO_TOOLS: ToolDefinition[] = [
         cardId: { type: "string", description: "The Trello card ID to move to Done" },
       },
       required: ["cardId"],
+    },
+  },
+];
+
+const GITHUB_TOOLS: ToolDefinition[] = [
+  {
+    name: "check_github_task",
+    description: "Mark a task list item in a GitHub issue as complete (updates the checkbox in the issue body).",
+    parameters: {
+      type: "object",
+      properties: {
+        issueNumber: { type: "number", description: "The GitHub issue number" },
+        taskIndex: { type: "number", description: "The 0-based index of the task in the issue body" },
+      },
+      required: ["issueNumber", "taskIndex"],
+    },
+  },
+  {
+    name: "close_github_issue",
+    description: "Close a GitHub issue after all tasks are done.",
+    parameters: {
+      type: "object",
+      properties: {
+        issueNumber: { type: "number", description: "The GitHub issue number" },
+      },
+      required: ["issueNumber"],
+    },
+  },
+  {
+    name: "comment_on_issue",
+    description: "Add a comment to a GitHub issue to report progress.",
+    parameters: {
+      type: "object",
+      properties: {
+        issueNumber: { type: "number", description: "The GitHub issue number" },
+        body: { type: "string", description: "The comment text" },
+      },
+      required: ["issueNumber", "body"],
+    },
+  },
+];
+
+const GITLAB_TOOLS: ToolDefinition[] = [
+  {
+    name: "check_gitlab_task",
+    description: "Mark a task list item in a GitLab issue as complete (updates the checkbox in the issue description).",
+    parameters: {
+      type: "object",
+      properties: {
+        issueIid: { type: "number", description: "The GitLab issue IID" },
+        taskIndex: { type: "number", description: "The 0-based index of the task in the issue description" },
+      },
+      required: ["issueIid", "taskIndex"],
+    },
+  },
+  {
+    name: "close_gitlab_issue",
+    description: "Close a GitLab issue after all tasks are done.",
+    parameters: {
+      type: "object",
+      properties: {
+        issueIid: { type: "number", description: "The GitLab issue IID" },
+      },
+      required: ["issueIid"],
+    },
+  },
+  {
+    name: "comment_on_issue",
+    description: "Add a note to a GitLab issue to report progress.",
+    parameters: {
+      type: "object",
+      properties: {
+        issueIid: { type: "number", description: "The GitLab issue IID" },
+        body: { type: "string", description: "The note text" },
+      },
+      required: ["issueIid", "body"],
     },
   },
 ];
@@ -266,6 +363,131 @@ async function executeTool(
     default:
       return `Unknown tool: ${name}`;
   }
+}
+
+// ── GitHub Tool Implementations ──────────────────────────────────────────
+
+async function executeGitHubTool(
+  name: string,
+  input: Record<string, unknown>,
+  githubToken: string,
+  githubOwner: string,
+  githubRepo: string,
+): Promise<string> {
+  const GITHUB_API = "https://api.github.com";
+  const headers = {
+    Authorization: `Bearer ${githubToken}`,
+    Accept: "application/vnd.github.v3+json",
+    "Content-Type": "application/json",
+  };
+
+  switch (name) {
+    case "check_github_task": {
+      const issueNumber = input.issueNumber as number;
+      const taskIndex = input.taskIndex as number;
+      // Get the issue body
+      const issueRes = await fetch(`${GITHUB_API}/repos/${githubOwner}/${githubRepo}/issues/${issueNumber}`, { headers });
+      if (!issueRes.ok) return `Error: GitHub API ${issueRes.status}`;
+      const issue = (await issueRes.json()) as { body: string | null };
+      if (!issue.body) return `Error: Issue #${issueNumber} has no body`;
+      // Toggle the checkbox
+      const updatedBody = toggleTaskCheckbox(issue.body, taskIndex, true);
+      if (updatedBody === issue.body) return `Error: Could not find task at index ${taskIndex}`;
+      // Update the issue body
+      const updateRes = await fetch(`${GITHUB_API}/repos/${githubOwner}/${githubRepo}/issues/${issueNumber}`, {
+        method: "PATCH", headers, body: JSON.stringify({ body: updatedBody }),
+      });
+      if (!updateRes.ok) return `Error: GitHub API ${updateRes.status}`;
+      return `Marked task ${taskIndex} as complete on issue #${issueNumber}`;
+    }
+    case "close_github_issue": {
+      const issueNumber = input.issueNumber as number;
+      const res = await fetch(`${GITHUB_API}/repos/${githubOwner}/${githubRepo}/issues/${issueNumber}`, {
+        method: "PATCH", headers, body: JSON.stringify({ state: "closed" }),
+      });
+      if (!res.ok) return `Error: GitHub API ${res.status}`;
+      return `Closed issue #${issueNumber}`;
+    }
+    case "comment_on_issue": {
+      const issueNumber = input.issueNumber as number;
+      const res = await fetch(`${GITHUB_API}/repos/${githubOwner}/${githubRepo}/issues/${issueNumber}/comments`, {
+        method: "POST", headers, body: JSON.stringify({ body: input.body as string }),
+      });
+      if (!res.ok) return `Error: GitHub API ${res.status}`;
+      return `Comment added to issue #${issueNumber}`;
+    }
+    default:
+      return `Unknown GitHub tool: ${name}`;
+  }
+}
+
+// ── GitLab Tool Implementations ──────────────────────────────────────────
+
+async function executeGitLabTool(
+  name: string,
+  input: Record<string, unknown>,
+  gitlabToken: string,
+  gitlabProjectId: number,
+): Promise<string> {
+  const GITLAB_API = "https://gitlab.com/api/v4";
+  const headers = {
+    "PRIVATE-TOKEN": gitlabToken,
+    "Content-Type": "application/json",
+  };
+
+  switch (name) {
+    case "check_gitlab_task": {
+      const issueIid = input.issueIid as number;
+      const taskIndex = input.taskIndex as number;
+      const issueRes = await fetch(`${GITLAB_API}/projects/${gitlabProjectId}/issues/${issueIid}`, { headers });
+      if (!issueRes.ok) return `Error: GitLab API ${issueRes.status}`;
+      const issue = (await issueRes.json()) as { description: string | null };
+      if (!issue.description) return `Error: Issue #${issueIid} has no description`;
+      const updatedDesc = toggleTaskCheckbox(issue.description, taskIndex, true);
+      if (updatedDesc === issue.description) return `Error: Could not find task at index ${taskIndex}`;
+      const updateRes = await fetch(`${GITLAB_API}/projects/${gitlabProjectId}/issues/${issueIid}`, {
+        method: "PUT", headers, body: JSON.stringify({ description: updatedDesc }),
+      });
+      if (!updateRes.ok) return `Error: GitLab API ${updateRes.status}`;
+      return `Marked task ${taskIndex} as complete on issue #${issueIid}`;
+    }
+    case "close_gitlab_issue": {
+      const issueIid = input.issueIid as number;
+      const res = await fetch(`${GITLAB_API}/projects/${gitlabProjectId}/issues/${issueIid}`, {
+        method: "PUT", headers, body: JSON.stringify({ state_event: "close" }),
+      });
+      if (!res.ok) return `Error: GitLab API ${res.status}`;
+      return `Closed issue #${issueIid}`;
+    }
+    case "comment_on_issue": {
+      const issueIid = input.issueIid as number;
+      const res = await fetch(`${GITLAB_API}/projects/${gitlabProjectId}/issues/${issueIid}/notes`, {
+        method: "POST", headers, body: JSON.stringify({ body: input.body as string }),
+      });
+      if (!res.ok) return `Error: GitLab API ${res.status}`;
+      return `Note added to issue #${issueIid}`;
+    }
+    default:
+      return `Unknown GitLab tool: ${name}`;
+  }
+}
+
+/** Toggle a markdown task list checkbox at the given index. */
+function toggleTaskCheckbox(body: string, taskIndex: number, checked: boolean): string {
+  const taskPattern = /^(\s*)-\s+\[([ xX])\]\s+(.*)/;
+  const lines = body.split("\n");
+  let currentIndex = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (taskPattern.test(lines[i])) {
+      if (currentIndex === taskIndex) {
+        lines[i] = lines[i].replace(taskPattern, (_m, indent, _box, text) =>
+          `${indent}- [${checked ? "x" : " "}] ${text}`);
+        return lines.join("\n");
+      }
+      currentIndex++;
+    }
+  }
+  return body; // Not found — return unchanged
 }
 
 // ── Chat Completion Types ──────────────────────────────────────────────────
@@ -429,6 +651,8 @@ interface Credentials {
   trelloApiKey: string;
   trelloToken: string;
   providerId: string;
+  githubToken?: string;
+  gitlabToken?: string;
 }
 
 export async function runLocalSession(
@@ -459,6 +683,8 @@ export async function runLocalSession(
   let errorMessage: string | undefined;
   let tasksCompleted = 0;
 
+  const source = config.source ?? "trello";
+
   const activeBoardData = {
     ...boardData,
     cards: boardData.doneListId
@@ -471,19 +697,68 @@ export async function runLocalSession(
     0,
   );
 
-  let userPrompt = `Here is the Trello board with tasks to complete:\n\n${JSON.stringify(activeBoardData, null, 2)}`;
+  // Select system prompt, user prompt, and tools based on source
+  let systemPrompt: string;
+  let userPrompt: string;
+  let sourceTools: ToolDefinition[];
+
+  if (source === "github") {
+    systemPrompt = GITHUB_SYSTEM_PROMPT;
+    sourceTools = GITHUB_TOOLS;
+    // Build GitHub-style user prompt with issue format
+    const issues = activeBoardData.cards.map((card) => {
+      const tasks = (card.checklists ?? []).flatMap((cl) =>
+        cl.checkItems
+          .filter((item) => item.state !== "complete")
+          .map((item) => ({
+            index: Number(item.id.replace("task-", "")),
+            text: item.name,
+          })),
+      );
+      return { number: Number(card.id), title: card.name, body: card.desc, tasks };
+    });
+    const data = { repo: `${config.githubOwner}/${config.githubRepo}`, issues };
+    userPrompt = `Here are the GitHub issues with tasks to complete:\n\n${JSON.stringify(data, null, 2)}`;
+    if (issues.some((i) => i.tasks.length > 0)) {
+      userPrompt += `\n\nEach task has an "index" field — use this as the taskIndex when calling check_github_task.`;
+    }
+  } else if (source === "gitlab") {
+    systemPrompt = GITLAB_SYSTEM_PROMPT;
+    sourceTools = GITLAB_TOOLS;
+    const issues = activeBoardData.cards.map((card) => {
+      const tasks = (card.checklists ?? []).flatMap((cl) =>
+        cl.checkItems
+          .filter((item) => item.state !== "complete")
+          .map((item) => ({
+            index: Number(item.id.replace("task-", "")),
+            text: item.name,
+          })),
+      );
+      return { iid: Number(card.id), title: card.name, description: card.desc, tasks };
+    });
+    const data = { project: boardData.board.name, issues };
+    userPrompt = `Here are the GitLab issues with tasks to complete:\n\n${JSON.stringify(data, null, 2)}`;
+    if (issues.some((i) => i.tasks.length > 0)) {
+      userPrompt += `\n\nEach task has an "index" field — use this as the taskIndex when calling check_gitlab_task.`;
+    }
+  } else {
+    systemPrompt = TRELLO_SYSTEM_PROMPT;
+    sourceTools = TRELLO_TOOLS;
+    userPrompt = `Here is the Trello board with tasks to complete:\n\n${JSON.stringify(activeBoardData, null, 2)}`;
+  }
+
   if (config.userMessage?.trim()) {
     userPrompt += `\n\nAdditional instructions from the user:\n${config.userMessage.trim()}`;
   }
 
-  const allTools = [...CODING_TOOLS, ...TRELLO_TOOLS];
+  const allTools = [...CODING_TOOLS, ...sourceTools];
   const providerId = (config.providerId ?? credentials.providerId ?? "claude") as AiProviderId;
   const { fn: chatCompletion, modelLabel } = getChatCompletionFn(providerId, credentials.anthropicApiKey);
 
   emit({ type: "system", subtype: "init", model: modelLabel });
 
   const messages: ChatMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
   ];
 
@@ -522,17 +797,19 @@ export async function runLocalSession(
 
         emit({ type: "tool_use", toolName: toolCall.function.name, toolInput: input });
 
-        const result = await executeTool(
-          toolCall.function.name,
-          input,
-          cwd,
-          credentials.trelloApiKey,
-          credentials.trelloToken,
-          boardData.board.id,
-        );
+        let result: string;
+        const toolName = toolCall.function.name;
+
+        if (source === "github" && (toolName === "check_github_task" || toolName === "close_github_issue" || toolName === "comment_on_issue")) {
+          result = await executeGitHubTool(toolName, input, credentials.githubToken ?? "", config.githubOwner ?? "", config.githubRepo ?? "");
+        } else if (source === "gitlab" && (toolName === "check_gitlab_task" || toolName === "close_gitlab_issue" || toolName === "comment_on_issue")) {
+          result = await executeGitLabTool(toolName, input, credentials.gitlabToken ?? "", config.gitlabProjectId ?? 0);
+        } else {
+          result = await executeTool(toolName, input, cwd, credentials.trelloApiKey, credentials.trelloToken, boardData.board.id);
+        }
 
         // Track completed tasks
-        if (toolCall.function.name === "check_trello_item" && !result.startsWith("Error")) {
+        if ((toolName === "check_trello_item" || toolName === "check_github_task" || toolName === "check_gitlab_task") && !result.startsWith("Error")) {
           tasksCompleted++;
         }
 
