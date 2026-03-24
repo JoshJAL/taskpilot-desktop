@@ -81,11 +81,11 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Provider selector in session controls
 
 ## Phase 22i: Session History
-**Status: Not started**
+**Status: Complete**
 
-- [ ] Fetch session history from server API
-- [ ] History list view
-- [ ] Session detail / log replay view
+- [x] Fetch session history from server API
+- [x] History list view
+- [x] Session detail / log replay view
 
 ## Phase 22j: Build & Packaging
 **Status: Not started**
