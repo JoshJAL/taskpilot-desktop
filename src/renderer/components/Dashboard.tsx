@@ -7,6 +7,7 @@ import { SessionControls } from "./SessionControls";
 import { SettingsPage } from "./SettingsPage";
 import { HistoryPage } from "./HistoryPage";
 import { RoadmapPage } from "./RoadmapPage";
+import { AiModelsPage } from "./AiModelsPage";
 import { useSession } from "../hooks/useSession";
 import { useBoardData } from "../hooks/useBoardData";
 import { useGitHubIssues } from "../hooks/useGitHubIssues";
@@ -322,7 +323,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
     });
   }
 
-  const canStart = !!activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap";
+  const canStart = !!activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap" && activeView.source !== "ai-docs";
 
   return (
     <div className="flex h-screen bg-(--sand)">
@@ -357,6 +358,13 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
           </div>
         )}
 
+        {/* AI Docs page */}
+        {activeView && "source" in activeView && activeView.source === "ai-docs" && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <AiModelsPage />
+          </div>
+        )}
+
         {/* No selection */}
         {!activeView && (
           <div className="flex flex-1 items-center justify-center">
@@ -372,7 +380,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
         )}
 
         {/* Active source view */}
-        {activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap" && (
+        {activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap" && activeView.source !== "ai-docs" && (
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Header */}
             <div className="border-b border-(--shore-line) bg-(--sand) px-6 py-3">

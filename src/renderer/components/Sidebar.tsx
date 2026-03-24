@@ -7,6 +7,7 @@ import {
   Settings,
   History,
   Map,
+  BookOpen,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -26,6 +27,7 @@ export type SourceView =
   | { source: "gitlab"; projectId: number; projectName: string }
   | { source: "history" }
   | { source: "roadmap" }
+  | { source: "ai-docs" }
   | { source: "settings" }
   | null;
 
@@ -224,6 +226,16 @@ export function Sidebar({
         >
           <Map size={18} className="shrink-0" />
           {!collapsed && <span>Roadmap</span>}
+        </button>
+
+        {/* AI Docs */}
+        <button
+          onClick={() => onSelectView({ source: "ai-docs" })}
+          className={`sidebar-link ${collapsed ? "justify-center" : "w-full"} ${activeView !== null && "source" in activeView && activeView.source === "ai-docs" ? "is-active" : ""}`}
+          title="AI Docs"
+        >
+          <BookOpen size={18} className="shrink-0" />
+          {!collapsed && <span>AI Docs</span>}
         </button>
 
         {/* Settings */}
