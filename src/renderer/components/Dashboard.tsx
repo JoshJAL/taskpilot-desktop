@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Sidebar, type SourceView } from "./Sidebar";
 import { BoardPanel } from "./BoardPanel";
+import { IssuePanel } from "./IssuePanel";
 import { SessionLog } from "./SessionLog";
 import { SessionControls } from "./SessionControls";
 import { SettingsPage } from "./SettingsPage";
@@ -9,7 +10,7 @@ import { RoadmapPage } from "./RoadmapPage";
 import { useSession } from "../hooks/useSession";
 import { useBoardData } from "../hooks/useBoardData";
 import { useToast } from "./Toast";
-import type { TrelloCard, BoardData, AiProviderId } from "../types";
+import type { TrelloCard, GitHubIssue, GitLabIssue, BoardData, AiProviderId } from "../types";
 
 interface DashboardProps {
   session: Record<string, unknown>;
@@ -171,6 +172,87 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
     });
   }
 
+  async function handleWorkOnGitHubIssue(issue: GitHubIssue) {
+    if (!activeView || !("source" in activeView) || activeView.source !== "github") return;
+
+    let workingDir = cwd;
+    if (!workingDir) {
+      workingDir = await window.taskpilot.selectDirectory() as string;
+      if (!workingDir) {
+        toast("info", "Select a project directory to start a session");
+        return;
+      }
+      handleCwdChange(workingDir);
+    }
+
+    const singleIssueBoardData: BoardData = {
+      board: { id: `github:${activeView.owner}/${activeView.repo}`, name: activeView.repoName },
+      cards: [{
+        id: String(issue.number),
+        name: issue.title,
+        desc: issue.body ?? "",
+        checklists: issue.taskList?.length
+          ? [{
+              id: "tasks",
+              name: "Tasks",
+              checkItems: issue.taskList.map((t, idx) => ({
+                id: `task-${idx}`,
+                name: t.text,
+                state: t.checked ? "complete" as const : "incomplete" as const,
+              })),
+            }]
+          : [],
+      }],
+    };
+
+    start(singleIssueBoardData, {
+      cwd: workingDir,
+      source: "github",
+      githubOwner: activeView.owner,
+      githubRepo: activeView.repo,
+    });
+  }
+
+  async function handleWorkOnGitLabIssue(issue: GitLabIssue) {
+    if (!activeView || !("source" in activeView) || activeView.source !== "gitlab") return;
+
+    let workingDir = cwd;
+    if (!workingDir) {
+      workingDir = await window.taskpilot.selectDirectory() as string;
+      if (!workingDir) {
+        toast("info", "Select a project directory to start a session");
+        return;
+      }
+      handleCwdChange(workingDir);
+    }
+
+    const singleIssueBoardData: BoardData = {
+      board: { id: `gitlab:${activeView.projectId}`, name: activeView.projectName },
+      cards: [{
+        id: String(issue.iid),
+        name: issue.title,
+        desc: issue.description ?? "",
+        checklists: issue.taskList?.length
+          ? [{
+              id: "tasks",
+              name: "Tasks",
+              checkItems: issue.taskList.map((t, idx) => ({
+                id: `task-${idx}`,
+                name: t.text,
+                state: t.checked ? "complete" as const : "incomplete" as const,
+              })),
+            }]
+          : [],
+      }],
+    };
+
+    start(singleIssueBoardData, {
+      cwd: workingDir,
+      source: "gitlab",
+      gitlabProjectId: activeView.projectId,
+    });
+  }
+
   const canStart = !!activeView && "source" in activeView && activeView.source !== "settings" && activeView.source !== "history" && activeView.source !== "roadmap";
 
   return (
@@ -271,11 +353,29 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
                 />
               )}
 
-              {/* GitHub / GitLab placeholder */}
-              {(activeView.source === "github" || activeView.source === "gitlab") && (
-                <div className="island-shell rounded-xl p-6 text-center text-sm text-(--sea-ink-soft)">
-                  Issue board view coming soon. You can start a session now using the controls above.
-                </div>
+              {/* GitHub issues */}
+              {activeView.source === "github" && (
+                <IssuePanel
+                  source="github"
+                  owner={activeView.owner}
+                  repo={activeView.repo}
+                  repoName={activeView.repoName}
+                  polling={isRunning}
+                  onWorkOnThis={handleWorkOnGitHubIssue}
+                  isSessionRunning={isRunning}
+                />
+              )}
+
+              {/* GitLab issues */}
+              {activeView.source === "gitlab" && (
+                <IssuePanel
+                  source="gitlab"
+                  projectId={activeView.projectId}
+                  projectName={activeView.projectName}
+                  polling={isRunning}
+                  onWorkOnThis={handleWorkOnGitLabIssue}
+                  isSessionRunning={isRunning}
+                />
               )}
 
               {/* PR result */}
