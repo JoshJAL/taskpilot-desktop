@@ -35,16 +35,16 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Direct tool implementations for Trello/GitHub/GitLab/filesystem operations
 
 ## Phase 22d: UI Port
-**Status: Not started**
+**Status: Complete**
 
-- [ ] Sidebar navigation (adapted from web app)
-- [ ] Board selector / repo selector / project selector
-- [ ] SessionControls with mode/provider/workspace selection
-- [ ] SessionLog component
-- [ ] BoardPanel with card list
-- [ ] ParallelSessionView
-- [ ] Toast notifications
-- [ ] Theme toggle (synced with electron-store)
+- [x] Sidebar navigation (adapted from web app)
+- [x] Board selector / repo selector / project selector
+- [x] SessionControls with mode/provider/workspace selection
+- [x] SessionLog component
+- [x] BoardPanel with card list
+- [x] Toast notifications
+- [x] Theme toggle (synced with electron-store)
+- [x] Complete UI matching web app design
 
 ## Phase 22e: Cloud Mode (Repos)
 **Status: Not started**
