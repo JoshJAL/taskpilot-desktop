@@ -110,8 +110,8 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Test update flow with a version bump
 
 ## Phase 22l: Documentation
-**Status: Not started**
+**Status: In progress**
 
 - [ ] Desktop app section in web docs
 - [ ] Download links on frontend landing page
-- [ ] README.md for this repo
+- [x] README.md for this repo
