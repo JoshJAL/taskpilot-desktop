@@ -581,7 +581,7 @@ function createOpenAIChatFn(apiKey: string, modelId?: string): ChatCompletionFn 
   return async (messages, tools, signal) => {
     const response = await client.chat.completions.create(
       {
-        model: modelId ?? "gpt-4o",
+        model: modelId ?? "gpt-5.4-2026-03-05",
         messages: messages.map((m) => {
           if (m.role === "tool") return { role: "tool" as const, content: m.content ?? "", tool_call_id: m.tool_call_id ?? "" };
           if (m.role === "assistant" && m.tool_calls) {
@@ -645,7 +645,7 @@ function createGroqChatFn(apiKey: string, modelId?: string): ChatCompletionFn {
 function getChatCompletionFn(providerId: AiProviderId, apiKey: string, modelId?: string): { fn: ChatCompletionFn; modelLabel: string } {
   switch (providerId) {
     case "openai":
-      return { fn: createOpenAIChatFn(apiKey, modelId), modelLabel: modelId ?? "gpt-4o" };
+      return { fn: createOpenAIChatFn(apiKey, modelId), modelLabel: modelId ?? "gpt-5.4-2026-03-05" };
     case "groq":
       return { fn: createGroqChatFn(apiKey, modelId), modelLabel: modelId ?? "llama-3.3-70b-versatile" };
     case "claude":
