@@ -9,6 +9,8 @@ import { HistoryPage } from "./HistoryPage";
 import { RoadmapPage } from "./RoadmapPage";
 import { useSession } from "../hooks/useSession";
 import { useBoardData } from "../hooks/useBoardData";
+import { useGitHubIssues } from "../hooks/useGitHubIssues";
+import { useGitLabIssues } from "../hooks/useGitLabIssues";
 import { useToast } from "./Toast";
 import type { TrelloCard, GitHubIssue, GitLabIssue, BoardData, AiProviderId } from "../types";
 
@@ -71,9 +73,19 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
 
   const { data: boardData } = useBoardData(currentBoardId, isRunning);
 
+  const currentGitHubOwner =
+    activeView && "source" in activeView && activeView.source === "github" ? activeView.owner : null;
+  const currentGitHubRepo =
+    activeView && "source" in activeView && activeView.source === "github" ? activeView.repo : null;
+  const currentGitLabProjectId =
+    activeView && "source" in activeView && activeView.source === "gitlab" ? activeView.projectId : null;
+
+  const { data: githubIssues } = useGitHubIssues(currentGitHubOwner, currentGitHubRepo, isRunning);
+  const { data: gitlabIssues } = useGitLabIssues(currentGitLabProjectId, isRunning);
+
   const activeCardCount = boardData
     ? boardData.cards.filter((c) => c.idList !== boardData.doneListId).length
-    : 0;
+    : (githubIssues?.filter((i) => i.state === "open").length ?? gitlabIssues?.filter((i) => i.state === "opened").length ?? 0);
 
   function handleStartSession(opts: {
     cwd: string;
@@ -107,17 +119,49 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
       githubRepo = opts.linkedRepo?.repo;
       gitlabProjectId = opts.linkedGitlabProjectId;
     } else if (activeView.source === "github") {
+      const openIssues = githubIssues?.filter((i) => i.state === "open") ?? [];
       sessionBoardData = {
         board: { id: `github:${activeView.owner}/${activeView.repo}`, name: activeView.repoName },
-        cards: [],
+        cards: openIssues.map((issue) => ({
+          id: String(issue.number),
+          name: issue.title,
+          desc: issue.body ?? "",
+          checklists: issue.taskList?.length
+            ? [{
+                id: "tasks",
+                name: "Tasks",
+                checkItems: issue.taskList.map((t, idx) => ({
+                  id: `task-${idx}`,
+                  name: t.text,
+                  state: t.checked ? "complete" as const : "incomplete" as const,
+                })),
+              }]
+            : [],
+        })),
       };
       source = "github";
       githubOwner = activeView.owner;
       githubRepo = activeView.repo;
     } else if (activeView.source === "gitlab") {
+      const openIssues = gitlabIssues?.filter((i) => i.state === "opened") ?? [];
       sessionBoardData = {
         board: { id: `gitlab:${activeView.projectId}`, name: activeView.projectName },
-        cards: [],
+        cards: openIssues.map((issue) => ({
+          id: String(issue.iid),
+          name: issue.title,
+          desc: issue.description ?? "",
+          checklists: issue.taskList?.length
+            ? [{
+                id: "tasks",
+                name: "Tasks",
+                checkItems: issue.taskList.map((t, idx) => ({
+                  id: `task-${idx}`,
+                  name: t.text,
+                  state: t.checked ? "complete" as const : "incomplete" as const,
+                })),
+              }]
+            : [],
+        })),
       };
       source = "gitlab";
       gitlabProjectId = activeView.projectId;
