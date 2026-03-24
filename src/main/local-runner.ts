@@ -28,9 +28,9 @@ const TRELLO_SYSTEM_PROMPT = `You are operating on a codebase. You have been giv
 Work through each card and checklist item in order.
 For each checklist item you complete, call the check_trello_item tool with the checkItemId and cardId.
 Do not mark items complete unless the code change has actually been made and verified.
-After completing ALL checklist items on a card, call move_card_to_done with the cardId to move it to the Done list.
-Once a card is in Done, do not interact with it again — move on to the next card.
-Focus on one card at a time. Complete all its items, move it to Done, then proceed to the next.
+After completing ALL checklist items on a card, call move_card_to_done with the cardId to move it to the Verify list.
+Once a card is in Verify, do not interact with it again — move on to the next card.
+Focus on one card at a time. Complete all its items, move it to Verify, then proceed to the next.
 IMPORTANT: Only make changes that are directly described in the cards and checklist items. Do NOT add features, refactor code, or make improvements beyond what is explicitly requested. Stay strictly within the scope of the given tasks.`;
 
 const GITHUB_SYSTEM_PROMPT = `You are operating on a codebase. You have been given GitHub issues containing tasks.
@@ -153,11 +153,11 @@ const TRELLO_TOOLS: ToolDefinition[] = [
   },
   {
     name: "move_card_to_done",
-    description: "Move a Trello card to the Done list after all its checklist items are completed.",
+    description: "Move a Trello card to the Verify list after all its checklist items are completed.",
     parameters: {
       type: "object",
       properties: {
-        cardId: { type: "string", description: "The Trello card ID to move to Done" },
+        cardId: { type: "string", description: "The Trello card ID to move to Verify" },
       },
       required: ["cardId"],
     },
@@ -341,24 +341,34 @@ async function executeTool(
     }
     case "move_card_to_done": {
       const TRELLO_BASE = "https://api.trello.com/1";
-      // Find Done list
+      // Find Verify list
       const listsRes = await fetch(
         `${TRELLO_BASE}/boards/${boardId}/lists?filter=open&key=${trelloApiKey}&token=${trelloToken}`,
       );
-      const lists = (await listsRes.json()) as Array<{ id: string; name: string }>;
-      let doneList = lists.find((l) => l.name.toLowerCase() === "done");
-      if (!doneList) {
+      const lists = (await listsRes.json()) as Array<{ id: string; name: string; pos?: number }>;
+      let verifyList = lists.find((l) => l.name.toLowerCase() === "verify");
+      if (!verifyList) {
+        // If no Verify list exists, create one positioned before Done
+        const doneList = lists.find((l) => l.name.toLowerCase() === "done");
+        let position: string | number = "bottom";
+        if (doneList && doneList.pos != null) {
+          // Position Verify list just before Done
+          position = doneList.pos - 1;
+        }
         const createRes = await fetch(
           `${TRELLO_BASE}/boards/${boardId}/lists?key=${trelloApiKey}&token=${trelloToken}`,
-          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "Done", pos: "bottom" }) },
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "Verify", pos: position }) },
         );
-        doneList = (await createRes.json()) as { id: string; name: string };
+        if (!createRes.ok) {
+          return `Error: Failed to create Verify list - Trello API ${createRes.status}`;
+        }
+        verifyList = (await createRes.json()) as { id: string; name: string };
       }
       await fetch(
         `${TRELLO_BASE}/cards/${input.cardId}?key=${trelloApiKey}&token=${trelloToken}`,
-        { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idList: doneList.id }) },
+        { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idList: verifyList.id }) },
       );
-      return `Moved card ${input.cardId} to Done list`;
+      return `Moved card ${input.cardId} to Verify list`;
     }
     default:
       return `Unknown tool: ${name}`;
@@ -513,7 +523,7 @@ type ChatCompletionFn = (
 
 // ── Provider Chat Functions ───────────────────────────────────────────────
 
-function createAnthropicChatFn(apiKey: string): ChatCompletionFn {
+function createAnthropicChatFn(apiKey: string, modelId?: string): ChatCompletionFn {
   const client = new Anthropic({ apiKey });
   return async (messages, tools, signal) => {
     const systemMessages = messages.filter((m) => m.role === "system");
@@ -550,7 +560,7 @@ function createAnthropicChatFn(apiKey: string): ChatCompletionFn {
     }));
 
     const response = await client.messages.create(
-      { model: "claude-sonnet-4-20250514", max_tokens: 8192, system: systemPrompt || undefined, messages: anthropicMessages, tools: anthropicTools.length > 0 ? anthropicTools : undefined },
+      { model: modelId ?? "claude-sonnet-4-20250514", max_tokens: 8192, system: systemPrompt || undefined, messages: anthropicMessages, tools: anthropicTools.length > 0 ? anthropicTools : undefined },
       { signal },
     );
 
@@ -566,12 +576,12 @@ function createAnthropicChatFn(apiKey: string): ChatCompletionFn {
   };
 }
 
-function createOpenAIChatFn(apiKey: string): ChatCompletionFn {
+function createOpenAIChatFn(apiKey: string, modelId?: string): ChatCompletionFn {
   const client = new OpenAI({ apiKey });
   return async (messages, tools, signal) => {
     const response = await client.chat.completions.create(
       {
-        model: "gpt-4o",
+        model: modelId ?? "gpt-4o",
         messages: messages.map((m) => {
           if (m.role === "tool") return { role: "tool" as const, content: m.content ?? "", tool_call_id: m.tool_call_id ?? "" };
           if (m.role === "assistant" && m.tool_calls) {
@@ -598,12 +608,12 @@ function createOpenAIChatFn(apiKey: string): ChatCompletionFn {
   };
 }
 
-function createGroqChatFn(apiKey: string): ChatCompletionFn {
+function createGroqChatFn(apiKey: string, modelId?: string): ChatCompletionFn {
   const client = new Groq({ apiKey });
   return async (messages, tools, signal) => {
     const response = await client.chat.completions.create(
       {
-        model: "llama-3.3-70b-versatile",
+        model: modelId ?? "llama-3.3-70b-versatile",
         messages: messages.map((m) => {
           if (m.role === "tool") return { role: "tool" as const, content: m.content ?? "", tool_call_id: m.tool_call_id ?? "" };
           if (m.role === "assistant" && m.tool_calls) {
@@ -632,15 +642,15 @@ function createGroqChatFn(apiKey: string): ChatCompletionFn {
   };
 }
 
-function getChatCompletionFn(providerId: AiProviderId, apiKey: string): { fn: ChatCompletionFn; modelLabel: string } {
+function getChatCompletionFn(providerId: AiProviderId, apiKey: string, modelId?: string): { fn: ChatCompletionFn; modelLabel: string } {
   switch (providerId) {
     case "openai":
-      return { fn: createOpenAIChatFn(apiKey), modelLabel: "gpt-4o" };
+      return { fn: createOpenAIChatFn(apiKey, modelId), modelLabel: modelId ?? "gpt-4o" };
     case "groq":
-      return { fn: createGroqChatFn(apiKey), modelLabel: "llama-3.3-70b" };
+      return { fn: createGroqChatFn(apiKey, modelId), modelLabel: modelId ?? "llama-3.3-70b-versatile" };
     case "claude":
     default:
-      return { fn: createAnthropicChatFn(apiKey), modelLabel: "claude-sonnet-4" };
+      return { fn: createAnthropicChatFn(apiKey, modelId), modelLabel: modelId ?? "claude-sonnet-4" };
   }
 }
 
@@ -753,7 +763,7 @@ export async function runLocalSession(
 
   const allTools = [...CODING_TOOLS, ...sourceTools];
   const providerId = (config.providerId ?? credentials.providerId ?? "claude") as AiProviderId;
-  const { fn: chatCompletion, modelLabel } = getChatCompletionFn(providerId, credentials.anthropicApiKey);
+  const { fn: chatCompletion, modelLabel } = getChatCompletionFn(providerId, credentials.anthropicApiKey, config.modelId);
 
   emit({ type: "system", subtype: "init", model: modelLabel });
 

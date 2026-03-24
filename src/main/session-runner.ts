@@ -105,6 +105,7 @@ async function startServerSession(
         cwd: config.cwd,
         userMessage: config.userMessage,
         providerId: config.providerId,
+        modelId: config.modelId,
         source: config.source,
         mode: config.mode,
         maxConcurrency: config.maxConcurrency,

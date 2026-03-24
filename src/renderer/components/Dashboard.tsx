@@ -116,6 +116,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
     mode: "sequential" | "parallel";
     concurrency: number;
     providerId: AiProviderId;
+    modelId?: string;
     webMode?: boolean;
     linkedRepo?: { owner: string; repo: string };
     linkedGitlabProjectId?: number;
@@ -199,6 +200,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
       cwd: opts.cwd || undefined,
       userMessage: opts.userMessage,
       providerId: opts.providerId,
+      modelId: opts.modelId,
       source,
       mode: opts.mode,
       maxConcurrency: opts.concurrency,

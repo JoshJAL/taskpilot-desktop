@@ -113,6 +113,7 @@ export interface SessionStartConfig {
   cwd?: string;
   userMessage?: string;
   providerId?: AiProviderId;
+  modelId?: string;
   source?: "trello" | "github" | "gitlab";
   mode?: "sequential" | "parallel";
   maxConcurrency?: number;

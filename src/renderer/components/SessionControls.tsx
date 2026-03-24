@@ -4,7 +4,7 @@ import { useIntegrationStatus } from "../hooks/useIntegrationStatus";
 import { useGitHubRepos } from "../hooks/useGitHubRepos";
 import { useGitLabProjects } from "../hooks/useGitLabProjects";
 import type { AiProviderId } from "../types";
-import { PROVIDER_SHORT_LABELS } from "../types";
+import { PROVIDER_SHORT_LABELS, PROVIDER_MODELS, DEFAULT_MODEL } from "../types";
 import { WorkspacePicker } from "./WorkspacePicker";
 
 interface SessionControlsProps {
@@ -21,6 +21,7 @@ interface SessionControlsProps {
     mode: "sequential" | "parallel";
     concurrency: number;
     providerId: AiProviderId;
+    modelId?: string;
     webMode?: boolean;
     linkedRepo?: { owner: string; repo: string };
     linkedGitlabProjectId?: number;
@@ -39,6 +40,7 @@ interface ControlsState {
   mode: "sequential" | "parallel";
   concurrency: number;
   providerId: AiProviderId;
+  modelId: string;
   workspaceKey: string;
 }
 
@@ -48,6 +50,7 @@ type ControlsAction =
   | { type: "SET_MODE"; value: "sequential" | "parallel" }
   | { type: "SET_CONCURRENCY"; value: number }
   | { type: "SET_PROVIDER"; value: AiProviderId }
+  | { type: "SET_MODEL"; value: string }
   | { type: "SET_WORKSPACE"; value: string };
 
 function controlsReducer(state: ControlsState, action: ControlsAction): ControlsState {
@@ -61,7 +64,9 @@ function controlsReducer(state: ControlsState, action: ControlsAction): Controls
     case "SET_CONCURRENCY":
       return { ...state, concurrency: action.value };
     case "SET_PROVIDER":
-      return { ...state, providerId: action.value };
+      return { ...state, providerId: action.value, modelId: DEFAULT_MODEL[action.value] };
+    case "SET_MODEL":
+      return { ...state, modelId: action.value };
     case "SET_WORKSPACE":
       return { ...state, workspaceKey: action.value };
   }
@@ -88,6 +93,7 @@ export function SessionControls({
     mode: "sequential" as const,
     concurrency: 3,
     providerId: configuredProviders[0] ?? "claude",
+    modelId: DEFAULT_MODEL[configuredProviders[0] ?? "claude"],
     workspaceKey: "",
   });
 
@@ -128,6 +134,7 @@ export function SessionControls({
       mode: state.webMode ? "sequential" : state.mode,
       concurrency: state.concurrency,
       providerId: state.providerId,
+      modelId: state.modelId,
       webMode: state.webMode,
       linkedRepo,
       linkedGitlabProjectId,
@@ -245,6 +252,22 @@ export function SessionControls({
               </select>
             </div>
           )}
+
+          {/* Model selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-(--sea-ink-soft)">Model:</span>
+            <select
+              value={state.modelId}
+              onChange={(e) => dispatch({ type: "SET_MODEL", value: e.target.value })}
+              className="rounded-lg border border-(--shore-line) bg-white px-2 py-1 text-xs text-(--sea-ink) outline-none focus:border-(--lagoon) dark:bg-[#1e1e1e] dark:text-[#e0e0e0]"
+            >
+              {PROVIDER_MODELS[state.providerId].map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Env toggle */}
           <ToggleGroup

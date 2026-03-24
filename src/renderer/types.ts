@@ -9,6 +9,32 @@ export const PROVIDER_SHORT_LABELS: Record<AiProviderId, string> = {
   groq: "Groq",
 };
 
+export const PROVIDER_MODELS: Record<AiProviderId, Array<{ id: string; label: string }>> = {
+  claude: [
+    { id: "claude-opus-4-20250514", label: "Opus 4" },
+    { id: "claude-sonnet-4-20250514", label: "Sonnet 4" },
+    { id: "claude-haiku-3-5-20241022", label: "Haiku 3.5" },
+  ],
+  openai: [
+    { id: "gpt-4o", label: "GPT-4o" },
+    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
+    { id: "gpt-4.1", label: "GPT-4.1" },
+    { id: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
+    { id: "o3-mini", label: "o3 Mini" },
+  ],
+  groq: [
+    { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
+    { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
+    { id: "gemma2-9b-it", label: "Gemma 2 9B" },
+  ],
+};
+
+export const DEFAULT_MODEL: Record<AiProviderId, string> = {
+  claude: "claude-sonnet-4-20250514",
+  openai: "gpt-4o",
+  groq: "llama-3.3-70b-versatile",
+};
+
 export interface IntegrationStatus {
   trelloLinked: boolean;
   githubLinked: boolean;
