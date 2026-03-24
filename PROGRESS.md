@@ -96,7 +96,7 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [ ] Code signing (Mac + Windows)
 
 ## Phase 22k: Auto-Update
-**Status: In progress**
+**Status: Complete**
 
 - [x] Add `electron-log` dependency
 - [x] Create `src/main/updater.ts` — auto-updater module with IPC event emission
@@ -105,7 +105,7 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Create `src/renderer/components/UpdateNotification.tsx` — restart prompt UI
 - [x] Integrate UpdateNotification into App.tsx
 - [x] Update GitHub Actions CI to publish releases (`--publish always`)
-- [ ] Test update flow with a version bump
+- [x] Test update flow with a version bump
 
 ## Phase 22l: Documentation
 **Status: Not started**
