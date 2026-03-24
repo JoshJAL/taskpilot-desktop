@@ -65,12 +65,12 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Excel support (via server)
 
 ## Phase 22g: Settings
-**Status: Not started**
+**Status: Complete**
 
-- [ ] Settings page with server URL config
-- [ ] Theme selector (light/dark/auto)
-- [ ] Connection status display
-- [ ] API key management (via server API)
+- [x] Settings page with server URL config
+- [x] Theme selector (light/dark/auto)
+- [x] Connection status display
+- [x] API key management (via server API)
 
 ## Phase 22h: Multi-Provider
 **Status: Not started**
