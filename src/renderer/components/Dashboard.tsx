@@ -24,7 +24,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
   const { toast } = useToast();
   const [collapsed, setCollapsed] = useState(false);
   const [activeView, setActiveView] = useState<SourceView>(null);
-  const [cwd, setCwd] = useState("");
+  const [cwdMap, setCwdMap] = useState<Record<string, string>>({});
 
   const {
     isRunning,
@@ -46,6 +46,9 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
       : null
     : null;
 
+  // cwd is scoped per view — each tab remembers its own project directory
+  const cwd = (viewKey ? cwdMap[viewKey] : "") ?? "";
+
   // Clear session state when switching between tabs (unless a session is running)
   const prevViewKey = useRef(viewKey);
   useEffect(() => {
@@ -57,9 +60,9 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
 
   // Load persisted settings
   useEffect(() => {
-    window.taskpilot.getSettings().then((s: { sidebarCollapsed?: boolean; lastCwd?: string }) => {
+    window.taskpilot.getSettings().then((s: { sidebarCollapsed?: boolean; cwdMap?: Record<string, string> }) => {
       if (s.sidebarCollapsed) setCollapsed(true);
-      if (s.lastCwd) setCwd(s.lastCwd);
+      if (s.cwdMap) setCwdMap(s.cwdMap);
     });
   }, []);
 
@@ -71,13 +74,15 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
     });
   }, []);
 
-  // Persist cwd when it changes
+  // Persist cwd per view — each tab remembers its own project directory
   const handleCwdChange = useCallback((newCwd: string) => {
-    setCwd(newCwd);
-    if (newCwd) {
-      window.taskpilot.updateSettings({ lastCwd: newCwd });
-    }
-  }, []);
+    if (!viewKey) return;
+    setCwdMap((prev) => {
+      const next = { ...prev, [viewKey]: newCwd };
+      window.taskpilot.updateSettings({ cwdMap: next });
+      return next;
+    });
+  }, [viewKey]);
 
   async function handleLogout() {
     await window.taskpilot.logout();
