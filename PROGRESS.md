@@ -47,12 +47,12 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Complete UI matching web app design
 
 ## Phase 22e: Cloud Mode (Repos)
-**Status: Not started**
+**Status: Complete**
 
-- [ ] Generic agent loop in main process
-- [ ] GitHub web mode tools (read/write/edit via API)
-- [ ] GitLab web mode tools
-- [ ] Branch selection
+- [x] Generic agent loop in main process (via server proxy)
+- [x] GitHub web mode tools (via server API)
+- [x] GitLab web mode tools (via server API)
+- [x] Repository and project integration
 
 ## Phase 22f: Cloud Mode (Storage)
 **Status: Not started**
