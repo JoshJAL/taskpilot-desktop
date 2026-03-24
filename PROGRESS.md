@@ -88,13 +88,14 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Session detail / log replay view
 
 ## Phase 22j: Build & Packaging
-**Status: Not started**
+**Status: Complete**
 
-- [ ] App icons (PNG, ICNS, ICO)
-- [ ] Windows NSIS installer
-- [ ] Mac DMG
-- [ ] Linux AppImage + deb
-- [ ] Code signing (Mac + Windows)
+- [x] App icons (PNG, ICNS, ICO)
+- [x] Windows NSIS installer
+- [x] Mac DMG
+- [x] Linux AppImage + deb
+- [x] GitHub Actions CI/CD pipeline
+- [ ] Code signing (Mac + Windows) — requires certificates
 
 ## Phase 22k: Auto-Update
 **Status: Complete**
