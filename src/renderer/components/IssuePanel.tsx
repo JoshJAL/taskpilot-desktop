@@ -1,3 +1,4 @@
+import { RefreshCw } from "lucide-react";
 import { useGitHubIssues } from "../hooks/useGitHubIssues";
 import { useGitLabIssues } from "../hooks/useGitLabIssues";
 import { GitHubIssueItem, GitLabIssueItem } from "./IssueItem";
@@ -39,7 +40,7 @@ function GitHubIssuePanel({
   onWorkOnThis,
   isSessionRunning,
 }: GitHubIssuePanelProps) {
-  const { data: issues, isLoading, error } = useGitHubIssues(owner, repo, polling);
+  const { data: issues, isLoading, error, refetch, isFetching } = useGitHubIssues(owner, repo, polling);
 
   if (isLoading) {
     return <IssueSkeleton />;
@@ -53,17 +54,23 @@ function GitHubIssuePanel({
 
   if (activeIssues.length === 0) {
     return (
-      <div className="island-shell rounded-xl p-6 text-center text-sm text-(--sea-ink-soft)">
-        No open issues found in &ldquo;{repoName}&rdquo;.
+      <div className="space-y-3">
+        <RefreshBar onRefresh={refetch} isFetching={isFetching} />
+        <div className="island-shell rounded-xl p-6 text-center text-sm text-(--sea-ink-soft)">
+          No open issues found in &ldquo;{repoName}&rdquo;.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-(--sea-ink)">
-        Open Issues ({activeIssues.length})
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-(--sea-ink)">
+          Open Issues ({activeIssues.length})
+        </h3>
+        <RefreshButton onRefresh={refetch} isFetching={isFetching} />
+      </div>
       {activeIssues.map((issue) => (
         <GitHubIssueItem
           key={issue.number}
@@ -83,7 +90,7 @@ function GitLabIssuePanel({
   onWorkOnThis,
   isSessionRunning,
 }: GitLabIssuePanelProps) {
-  const { data: issues, isLoading, error } = useGitLabIssues(projectId, polling);
+  const { data: issues, isLoading, error, refetch, isFetching } = useGitLabIssues(projectId, polling);
 
   if (isLoading) {
     return <IssueSkeleton />;
@@ -97,17 +104,23 @@ function GitLabIssuePanel({
 
   if (activeIssues.length === 0) {
     return (
-      <div className="island-shell rounded-xl p-6 text-center text-sm text-(--sea-ink-soft)">
-        No open issues found in &ldquo;{projectName}&rdquo;.
+      <div className="space-y-3">
+        <RefreshBar onRefresh={refetch} isFetching={isFetching} />
+        <div className="island-shell rounded-xl p-6 text-center text-sm text-(--sea-ink-soft)">
+          No open issues found in &ldquo;{projectName}&rdquo;.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-(--sea-ink)">
-        Open Issues ({activeIssues.length})
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-(--sea-ink)">
+          Open Issues ({activeIssues.length})
+        </h3>
+        <RefreshButton onRefresh={refetch} isFetching={isFetching} />
+      </div>
       {activeIssues.map((issue) => (
         <GitLabIssueItem
           key={issue.iid}
@@ -116,6 +129,28 @@ function GitLabIssuePanel({
           isSessionRunning={isSessionRunning}
         />
       ))}
+    </div>
+  );
+}
+
+function RefreshButton({ onRefresh, isFetching }: { onRefresh: () => void; isFetching: boolean }) {
+  return (
+    <button
+      onClick={onRefresh}
+      disabled={isFetching}
+      className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-(--sea-ink-soft) transition hover:bg-(--foam) hover:text-(--sea-ink) disabled:opacity-50"
+      title="Refresh issues"
+    >
+      <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+      Refresh
+    </button>
+  );
+}
+
+function RefreshBar({ onRefresh, isFetching }: { onRefresh: () => void; isFetching: boolean }) {
+  return (
+    <div className="flex justify-end">
+      <RefreshButton onRefresh={onRefresh} isFetching={isFetching} />
     </div>
   );
 }

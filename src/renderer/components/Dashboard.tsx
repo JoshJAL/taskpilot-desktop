@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Sidebar, type SourceView } from "./Sidebar";
 import { BoardPanel } from "./BoardPanel";
 import { IssuePanel } from "./IssuePanel";
@@ -35,7 +35,25 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
     start,
     stop,
     sendMessage,
+    reset,
   } = useSession();
+
+  // Derive a stable key for the current view
+  const viewKey = activeView && "source" in activeView
+    ? activeView.source === "trello" ? `trello:${activeView.boardId}`
+      : activeView.source === "github" ? `github:${activeView.owner}/${activeView.repo}`
+      : activeView.source === "gitlab" ? `gitlab:${activeView.projectId}`
+      : null
+    : null;
+
+  // Clear session state when switching between tabs (unless a session is running)
+  const prevViewKey = useRef(viewKey);
+  useEffect(() => {
+    if (prevViewKey.current !== viewKey && !isRunning) {
+      reset();
+    }
+    prevViewKey.current = viewKey;
+  }, [viewKey, isRunning, reset]);
 
   // Load persisted settings
   useEffect(() => {

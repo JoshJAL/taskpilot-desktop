@@ -216,5 +216,13 @@ export function useSession() {
     [addLog],
   );
 
-  return { isRunning, logs, error, pendingQuestion, prResult, start, stop, sendMessage: sendUserMessage };
+  const reset = useCallback(() => {
+    setLogs([]);
+    setError(null);
+    setPendingQuestion(null);
+    setPrResult(null);
+    idCounter.current = 0;
+  }, []);
+
+  return { isRunning, logs, error, pendingQuestion, prResult, start, stop, sendMessage: sendUserMessage, reset };
 }
