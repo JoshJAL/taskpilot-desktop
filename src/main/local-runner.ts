@@ -560,7 +560,7 @@ function createAnthropicChatFn(apiKey: string, modelId?: string): ChatCompletion
     }));
 
     const response = await client.messages.create(
-      { model: modelId ?? "claude-sonnet-4-20250514", max_tokens: 8192, system: systemPrompt || undefined, messages: anthropicMessages, tools: anthropicTools.length > 0 ? anthropicTools : undefined },
+      { model: modelId ?? "claude-sonnet-4-6-20250827", max_tokens: 8192, system: systemPrompt || undefined, messages: anthropicMessages, tools: anthropicTools.length > 0 ? anthropicTools : undefined },
       { signal },
     );
 
