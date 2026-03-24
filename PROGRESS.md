@@ -55,14 +55,14 @@ Tracks implementation progress for the desktop application (Phase 22 from the ma
 - [x] Repository and project integration
 
 ## Phase 22f: Cloud Mode (Storage)
-**Status: Not started**
+**Status: Complete**
 
-- [ ] Copy Google Drive client from web app
-- [ ] Copy OneDrive client from web app
-- [ ] Storage tool set in main process
-- [ ] Google Docs support
-- [ ] Google Sheets support
-- [ ] Excel support
+- [x] Google Drive integration (via server API)
+- [x] OneDrive integration (via server API)
+- [x] Storage workspace selection
+- [x] Google Docs support (via server)
+- [x] Google Sheets support (via server)
+- [x] Excel support (via server)
 
 ## Phase 22g: Settings
 **Status: Not started**
