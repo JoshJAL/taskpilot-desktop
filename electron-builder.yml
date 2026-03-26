@@ -11,6 +11,10 @@ win:
     - nsis
   icon: resources/icon.ico
   artifactName: TaskPilot-Setup.${ext}
+  signingHashAlgorithms:
+    - sha256
+  certificateFile: resources/taskpilot-cert.pfx
+  certificatePassword: ${WIN_CSC_KEY_PASSWORD}
 mac:
   target:
     - dmg
