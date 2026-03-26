@@ -64,6 +64,12 @@ export function registerIpcHandlers() {
     return { success: true };
   });
 
+  ipcMain.handle("auth:deleteAccount", async () => {
+    const result = await apiFetch("/api/account/delete", { method: "POST" });
+    setSessionCookie(null);
+    return result;
+  });
+
   ipcMain.handle("auth:session", async () => {
     const cookie = getSessionCookie();
     if (!cookie) return null;

@@ -10,7 +10,11 @@ const PROVIDERS: Array<{ id: AiProviderId; label: string }> = [
   { id: "groq", label: "Groq" },
 ];
 
-export function SettingsPage() {
+interface SettingsPageProps {
+  onAccountDeleted?: () => void;
+}
+
+export function SettingsPage({ onAccountDeleted }: SettingsPageProps) {
   const {
     trelloLinked,
     githubLinked,
@@ -172,6 +176,89 @@ export function SettingsPage() {
           TaskPilot Desktop v0.1.0 — AI coding agents meet task boards, on your desktop.
         </p>
       </section>
+
+      {/* Danger Zone */}
+      <DeleteAccountSection onDeleted={onAccountDeleted} />
     </div>
+  );
+}
+
+function DeleteAccountSection({ onDeleted }: { onDeleted?: () => void }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleDelete() {
+    if (confirmText !== "delete my account") return;
+    setDeleting(true);
+    setError("");
+
+    try {
+      await window.taskpilot.deleteAccount();
+      onDeleted?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <section className="island-shell rounded-2xl border border-red-200 p-6 dark:border-red-900/40">
+      <h2 className="mb-2 text-lg font-semibold text-red-600 dark:text-red-400">
+        Danger Zone
+      </h2>
+      <p className="mb-4 text-sm text-(--sea-ink-soft)">
+        Permanently delete your account and all associated data. This includes
+        session history, API keys, OAuth connections, and settings. This action
+        cannot be undone.
+      </p>
+
+      {!showConfirm ? (
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+        >
+          Delete account
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-(--sea-ink)">
+            Type <span className="font-mono text-red-600 dark:text-red-400">delete my account</span> to confirm:
+          </p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="delete my account"
+            className="w-full rounded-lg border border-red-300 bg-white/60 px-3 py-2 text-sm text-(--sea-ink) outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-red-800 dark:bg-white/5"
+            disabled={deleting}
+          />
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={confirmText !== "delete my account" || deleting}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+            >
+              {deleting ? "Deleting..." : "Permanently delete my account"}
+            </button>
+            <button
+              onClick={() => {
+                setShowConfirm(false);
+                setConfirmText("");
+                setError("");
+              }}
+              disabled={deleting}
+              className="rounded-lg border border-(--shore-line) px-4 py-2 text-sm text-(--sea-ink) transition hover:bg-(--foam) disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

@@ -7,6 +7,7 @@ const api = {
   register: (name: string, email: string, password: string) =>
     ipcRenderer.invoke("auth:register", name, email, password),
   logout: () => ipcRenderer.invoke("auth:logout"),
+  deleteAccount: () => ipcRenderer.invoke("auth:deleteAccount"),
   getSession: () => ipcRenderer.invoke("auth:session"),
 
   // Data

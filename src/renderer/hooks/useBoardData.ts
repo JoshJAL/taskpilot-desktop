@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { TrelloBoard, TrelloCard, BoardData } from "../types";
+import type { TrelloBoard, TrelloCard } from "../types";
 
 interface CardsResponse {
   cards: TrelloCard[];

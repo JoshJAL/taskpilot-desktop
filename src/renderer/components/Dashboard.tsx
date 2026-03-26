@@ -340,7 +340,7 @@ export function Dashboard({ session, onLogout }: DashboardProps) {
         {/* Settings page */}
         {activeView && "source" in activeView && activeView.source === "settings" && (
           <div className="flex-1 overflow-y-auto p-6">
-            <SettingsPage />
+            <SettingsPage onAccountDeleted={onLogout} />
           </div>
         )}
 

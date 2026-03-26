@@ -63,7 +63,7 @@ export type { AgentSessionSummary, SessionListQuery, SessionEvent };
 export function useSessionList(query: SessionListQuery = {}) {
   return useQuery<SessionListResponse>({
     queryKey: ["sessions", query],
-    queryFn: () => window.taskpilot.getSessions(query),
+    queryFn: () => window.taskpilot.getSessions({ ...query }),
   });
 }
 

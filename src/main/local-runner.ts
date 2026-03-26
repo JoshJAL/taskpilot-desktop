@@ -680,7 +680,7 @@ export async function runLocalSession(
     // Record for history
     recordedEvents.push({
       type: event.type,
-      content: event as Record<string, unknown>,
+      content: event as unknown as Record<string, unknown>,
       sequence: eventSeq++,
       timestamp: new Date().toISOString(),
     });
